@@ -35,7 +35,9 @@ public interface LocationDao {
     // todo : getLocation avec id en paramètre
 
     @Query("SELECT * FROM location_table ORDER BY id DESC")
-    double[] getAllLocations();
+    //double[] getAllLocations();
+    LiveData<List<Location>> getAllLocations();
+
     // todo : getAllLocations
 
 }
