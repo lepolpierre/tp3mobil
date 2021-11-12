@@ -40,10 +40,12 @@ public class HomeFragment extends Fragment {
 
         // todo : instanciation correcte du ViewModel
         homeViewModel = new ViewModelProvider(requireActivity()).get(HomeViewModel.class);
+
+
         ListLocation = homeViewModel.getAllLocation();
 
-        View v = binding.getRoot();
-    return v;
+        View view = binding.getRoot();
+    return view;
     }
 
     @Override

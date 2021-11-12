@@ -31,13 +31,15 @@ public interface LocationDao {
     void deleteALoc(Location property);
 
     @Query("SELECT * FROM location_table WHERE `id` = :id")
-    int getLocation(int id);
+//    int getLocation(int id);
     // todo : getLocation avec id en paramètre
+    LiveData<Location> getLocation(int id);
+
 
     @Query("SELECT * FROM location_table ORDER BY id DESC")
     //double[] getAllLocations();
+        // todo : getAllLocations
     LiveData<List<Location>> getAllLocations();
 
-    // todo : getAllLocations
 
 }

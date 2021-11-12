@@ -29,6 +29,9 @@
         android:name="com.example.garneau.demo_tp3.ui.details.DetailsFragment"
         android:label="details_fragment"
         tools:layout="@layout/details_fragment">
+        <argument
+            android:name="idLocation"
+            app:argType="integer" />
 
     </fragment>
 

@@ -67,7 +67,7 @@ public class LocationAdapter extends RecyclerView.Adapter<LocationAdapter.NoteHo
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                NavDirections action = (NavDirections) HomeFragmentDirections.actionNavHomeToDetailsFragment();
+                NavDirections action = (NavDirections) HomeFragmentDirections.actionNavHomeToDetailsFragment(current.getId());
                 Navigation.findNavController(view).navigate(action);
             }
         });
