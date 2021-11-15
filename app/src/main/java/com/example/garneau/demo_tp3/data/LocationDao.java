@@ -37,7 +37,6 @@ public interface LocationDao {
 
 
     @Query("SELECT * FROM location_table ORDER BY id DESC")
-    //double[] getAllLocations();
         // todo : getAllLocations
     LiveData<List<Location>> getAllLocations();
 

@@ -6,6 +6,8 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -22,6 +24,7 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.renderscript.Sampler;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -38,13 +41,16 @@ import android.widget.Toast;
 import com.example.garneau.demo_tp3.MainActivity;
 import com.example.garneau.demo_tp3.data.LocationDao;
 import com.example.garneau.demo_tp3.data.LocationRoomDatabase;
+import com.example.garneau.demo_tp3.databinding.DetailsFragmentBinding;
 import com.example.garneau.demo_tp3.databinding.FragmentMapsBinding;
 import com.example.garneau.demo_tp3.databinding.MarkerLayoutBinding;
+import com.example.garneau.demo_tp3.ui.details.DetailsViewModel;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
@@ -53,9 +59,11 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 import com.example.garneau.demo_tp3.R;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Locale;
 
 public class MapsFragment extends Fragment implements OnMapReadyCallback {
@@ -67,8 +75,12 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     private FusedLocationProviderClient fusedLocationClient;
     private Location locationUser;
     private TextView id_distance;
+    private Boolean modeAjoutPoint;
+    private MarkerLayoutBinding bindingMarker;
+    private FragmentMapsBinding binding;
+    private com.example.garneau.demo_tp3.model.Location uneLocation;
 
-    FragmentMapsBinding binding;
+    private com.example.garneau.demo_tp3.model.Location markerInfo;
 
     private Boolean addLocation = false;
     private Boolean isMarkerOpen = false;
@@ -81,16 +93,29 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         // todo : instanciation correcte du binding
+        binding = FragmentMapsBinding.inflate(getLayoutInflater());
 
         // todo : instanciation correcte du ViewModel
+        mapsViewModel = new ViewModelProvider(requireActivity()).get(MapsViewModel.class);
 
-        return null;
+        modeAjoutPoint = false;
+
+        View view = binding.getRoot();
+
+
+        return view;
+
+
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         // todo : get mapFragment
+
+        SupportMapFragment mapFragment = (SupportMapFragment)
+                getChildFragmentManager().findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
 
         Activity activity = getActivity();
 
@@ -99,6 +124,22 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         // todo : clic sur fab
         // 1. activer la finction d'ajout de points
         // 2. régler la couleur du fab
+
+        binding.fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                modeAjoutPoint = !modeAjoutPoint;
+                if (modeAjoutPoint == true){
+                    binding.fab.setBackgroundTintList(ColorStateList.valueOf(Color
+                            .parseColor("#45F41E")));
+                }else{
+                    binding.fab.setBackgroundTintList(ColorStateList.valueOf(Color
+                            .parseColor("#EA0202")));
+                }
+
+
+            }
+        });
 
 
 
@@ -127,11 +168,31 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
             //     Ainsi le point est inclus dans le marqueur et accessible au getInfoContents(Marker)
 
 
+            mapsViewModel.getAllLocation().observe(getViewLifecycleOwner(),
+                    new Observer<List<com.example.garneau.demo_tp3.model.Location>>() {
+                        @Override
+                        public void onChanged(List<com.example.garneau.demo_tp3.model.Location> locations) {
+
+                            for (com.example.garneau.demo_tp3.model.Location location:locations) {
+                                LatLng pointCoordonees = new LatLng(location.getLatitude(), location.getLongitude());
+
+                                mMap.addMarker(new MarkerOptions().position(pointCoordonees).title(location.getNom())).setTag(location);
+                                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(pointCoordonees, 11));
+
+                            }
+
+                        }
+                    });
+
+
+
+
             // todo : clic sur carte
             // 2 cas : Mode Ajout de Point et Mode normal
 
 
             // todo : placer la barre de zoom
+            mMap.getUiSettings().setZoomControlsEnabled(true);
 
 
             // Configuration du Layout pour les popups (InfoWindow)
@@ -147,7 +208,32 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
                     // 1. affichage de distance sur le fragment
                     // 2. Déployer le layout de la vue Marker et passer les valeurs du point cliqué afin d'affichage
 
-                return null;
+
+                    bindingMarker = MarkerLayoutBinding.inflate(getLayoutInflater());
+//                    bindingMarker = MarkerLayoutBinding.inflate(LayoutInflater.from(MainActivity.this));
+//
+                    TextView tvNom = bindingMarker.tvNomMap;
+                    TextView tvAdress = bindingMarker.tvAdrMap;
+                    TextView tvCat = bindingMarker.tvCatMap;
+                    ImageView ivPhotoMap = bindingMarker.ivPhotoMap;
+//                    TextView tvNom = bindingMarker.tvNomMap;
+//                    ImageView ivPhoto = bindingMarker.ivPhotoMap;
+                    markerInfo= (com.example.garneau.demo_tp3.model.Location) marker.getTag();
+
+                    if (markerInfo != null){
+                        tvAdress.setText("boop");
+                        tvCat.setText(markerInfo.getCategorie());
+                        tvNom.setText(markerInfo.getNom());
+                        ivPhotoMap.setImageResource(R.drawable.pleinair);
+                    }
+//
+//                    // Récupération de l'objet attaché au Marker
+//                    Cegep markerInfo = (Cegep) marker.getTag();
+//                    if (markerInfo != null) {
+//                        tvNom.setText(markerInfo.getNom());
+//                        ivPhoto.setImageResource(R.drawable.garneau);
+//                    }
+                        return bindingMarker.getRoot();
                 }
 
             });
@@ -228,6 +314,11 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     }
 
     // todo : méthode privée de recherche d'adresse
+    private void rechercheAdresse(){
+
+
+            //return null;
+    }
 
 
 

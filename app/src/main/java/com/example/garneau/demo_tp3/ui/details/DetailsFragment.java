@@ -13,6 +13,8 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
@@ -47,7 +49,7 @@ public class DetailsFragment extends Fragment implements OnMapReadyCallback {
 
     private int id;
 
-    private static  LatLng CURRENTPOINT;
+    private static LatLng CURRENTPOINT;
 
 
     public static DetailsFragment newInstance() {
@@ -62,7 +64,14 @@ public class DetailsFragment extends Fragment implements OnMapReadyCallback {
         binding = DetailsFragmentBinding.inflate(getLayoutInflater());
         // todo : instanciation correcte du ViewModel
         detailsViewModel = new ViewModelProvider(requireActivity()).get(DetailsViewModel.class);
-
+//
+//        FragmentManager manager = getFragmentManager();
+//        FragmentTransaction transaction = manager.beginTransaction();
+//        SupportMapFragment fragment = new SupportMapFragment();
+//        transaction.add(R.id.map, fragment);
+//        transaction.commit();
+//
+//        fragment.getMapAsync(this);
 
         View view = binding.getRoot();
         return view;
@@ -83,27 +92,46 @@ public class DetailsFragment extends Fragment implements OnMapReadyCallback {
         location = detailsViewModel.getLocation(id);
 
 
-
-
-
-                // todo : régler le comportement de l'observe sur le point retourné par le view model
+        // todo : régler le comportement de l'observe sur le point retourné par le view model
         // --> méthode onChanged de l'Observer : passer les valeurs du point courant à la View
+        detailsViewModel.getLocation(id).observe(getViewLifecycleOwner(),
+                new Observer<Location>() {
+                    @Override
+                    public void onChanged(Location location) {
+                        binding.tvNomDetails.setText(location.getNom());
+                        binding.tvAdresseDetails.setText(location.getAdresse());
+                        binding.tvCategorieDetails.setText(location.getCategorie());
+                    }
+                });
 
-        // todo : get mapFragment
-        SupportMapFragment mapFragment =  (SupportMapFragment)getParentFragmentManager()
-                .findFragmentById(R.id.map);
-        //mapFragment.getMapAsync(this);
-
+        SupportMapFragment mapFragment = (SupportMapFragment)
+                getChildFragmentManager().findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
     }
+        // todo : get mapFragment
+
+
+
+
+
     @Override
     public void onMapReady(GoogleMap googleMap) {
         // todo : régler le comportement de l'observe sur élément Location retourné par le view model
         // --> méthode onChanged de l'Observer : affichage correct du marqueur pour ce point
         mMap = googleMap;
-        CURRENTPOINT = new LatLng(location.getValue().getLongitude(),location.getValue().getLatitude());
-        //detailsViewModel.getLocation(id).observe();
 
-        mMap.addMarker(new MarkerOptions().position(CURRENTPOINT).title("Marqueur Garneau")).setTag(TAG);
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(CURRENTPOINT,11));
+
+        detailsViewModel.getLocation(id).observe(getViewLifecycleOwner(),
+                new Observer<Location>() {
+                    @Override
+                    public void onChanged(Location location) {
+                        CURRENTPOINT = new LatLng(location.getLongitude(), location.getLatitude());
+
+                        mMap.addMarker(new MarkerOptions().position(CURRENTPOINT).title(location.getNom())).setTag(location);
+                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(CURRENTPOINT, 11));
+
+                    }
+                });
+
     }
 }
