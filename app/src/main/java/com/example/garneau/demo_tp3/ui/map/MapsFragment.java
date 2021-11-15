@@ -22,6 +22,7 @@ import android.graphics.Typeface;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.net.wifi.aware.WifiAwareManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.renderscript.Sampler;
@@ -78,7 +79,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     private Boolean modeAjoutPoint;
     private MarkerLayoutBinding bindingMarker;
     private FragmentMapsBinding binding;
-    private com.example.garneau.demo_tp3.model.Location uneLocation;
+    private FragmentManager manager;
 
     private com.example.garneau.demo_tp3.model.Location markerInfo;
 
@@ -100,6 +101,10 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
         modeAjoutPoint = false;
 
+        manager = getChildFragmentManager();
+        // association du gestionnaire des actions sur la stack
+        //manager.addOnBackStackChangedListener(this);
+
         View view = binding.getRoot();
 
 
@@ -120,6 +125,14 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         Activity activity = getActivity();
 
         // todo : lancer la demande de permission pour géolocalisation
+
+        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+        != PackageManager.PERMISSION_GRANTED){
+            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION},LOCATION_PERMISSION_CODE
+                    );
+
+        }
+
 
         // todo : clic sur fab
         // 1. activer la finction d'ajout de points
@@ -189,6 +202,19 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
             // todo : clic sur carte
             // 2 cas : Mode Ajout de Point et Mode normal
+            mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener()
+            {
+                @Override
+                public void onMapClick(LatLng arg0)
+                {
+                    if (modeAjoutPoint)
+                    {
+                        com.example.garneau.demo_tp3.model.Location location =
+                                new com.example.garneau.demo_tp3.model.Location("","","", arg0.latitude, arg0.longitude);
+                        actionClicCarte(location);
+                    }
+                }
+            });
 
 
             // todo : placer la barre de zoom
@@ -339,6 +365,9 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
         ArrayList<String> spinnerArray = new ArrayList<String>();
         // todo : passage au spinner des valeurs de catégorie possibles
+        spinnerArray.add("parc");
+        spinnerArray.add("rue");
+        spinnerArray.add("maison");
 
         Spinner spinner = new Spinner(getActivity());
         ArrayAdapter<String> spinnerArrayAdapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_spinner_dropdown_item, spinnerArray);
@@ -386,9 +415,10 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         public void onClick(DialogInterface p_dialog, int p_which) {
             // todo : ajout dans la BD du nouveau point
             // construction du point
+            location.setNom(setTv1.getText().toString());
+            location.setCategorie(spinner.toString());
+            new InsertLocationDbAsync(mapsViewModel, location).execute();
 
-            // todo : ajout dans la BD du nouveau point
-            // ajout du point
 
         }
     }
@@ -402,11 +432,13 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         public InsertLocationDbAsync(MapsViewModel mvm, com.example.garneau.demo_tp3.model.Location location) {
             this.mapsViewModel = mvm;
             this.location = location;
+
         }
 
         @Override
         protected Void doInBackground(Void... voids) {
             // todo : insertion d'un point dans la BD
+            mapsViewModel.insert(location);
             return null;
         }
     }

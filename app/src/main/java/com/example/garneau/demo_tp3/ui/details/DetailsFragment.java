@@ -125,7 +125,7 @@ public class DetailsFragment extends Fragment implements OnMapReadyCallback {
                 new Observer<Location>() {
                     @Override
                     public void onChanged(Location location) {
-                        CURRENTPOINT = new LatLng(location.getLongitude(), location.getLatitude());
+                        CURRENTPOINT = new LatLng(location.getLatitude(),location.getLongitude());
 
                         mMap.addMarker(new MarkerOptions().position(CURRENTPOINT).title(location.getNom())).setTag(location);
                         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(CURRENTPOINT, 11));

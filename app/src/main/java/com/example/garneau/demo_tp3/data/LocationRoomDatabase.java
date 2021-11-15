@@ -51,6 +51,8 @@ public abstract class LocationRoomDatabase extends RoomDatabase {
             locationDao = db.LocationDao();
         }
 
+
+
         @Override
         protected Void doInBackground(Void... voids) {
             locationDao.insert(new Location("what","else", "schmut", 46.793028, -71.2646));

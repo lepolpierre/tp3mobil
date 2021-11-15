@@ -32,7 +32,7 @@ public class MapsViewModel extends AndroidViewModel {
     public LiveData<List<Location>> getAllLocation () {return allLocation;}
 
     // todo : méthode pour insérer un point dans la BD
-    public void insert (Location location) {}
+    public void insert (Location location) {mDb.LocationDao().insert(location);}
 
 
 
