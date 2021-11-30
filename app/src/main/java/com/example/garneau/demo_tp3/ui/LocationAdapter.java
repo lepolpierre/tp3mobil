@@ -37,11 +37,10 @@ public class LocationAdapter extends RecyclerView.Adapter<LocationAdapter.NoteHo
     @NonNull
     @Override
     public NoteHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        // todo : créer et instancier le layout
+        // creation et instanciation du layout
         binding = LocationRowBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false);
 
-        // todo : retourner un NoteHolder correctement constitué
-
+        // routour du noteHolder
         return new NoteHolder(binding.getRoot());
 
     }
@@ -49,20 +48,24 @@ public class LocationAdapter extends RecyclerView.Adapter<LocationAdapter.NoteHo
     @Override
     public void onBindViewHolder(@NonNull NoteHolder holder, int position) {
 
-
-        // todo : récupérer le point
+        // recuperation du point
         Location current = locationsList.get(position);
 
-        // todo : passer les bonnes valeurs aux éléments du holder
         holder.txtNom.setText(current.getNom());
         holder.txtAdress.setText(current.getAdresse());
         holder.txtCategorie.setText(current.getCategorie());
 
 
-        // todo : image
-        holder.img.setImageResource(R.drawable.pleinair);
+        // set image
+        if (current.getCategorie().equals("parc")){
+            holder.img.setImageResource(R.drawable.parc);
+        }else if(current.getCategorie().equals("maison")){
+            holder.img.setImageResource(R.drawable.maison);
+        }else{
+            holder.img.setImageResource(R.drawable.foret);
+        }
 
-        // todo : clic sur rangée
+        // gestion du clic sur la ranger
         // Navigation vers le fragment Détail avec Id du point détaillé
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -73,24 +76,21 @@ public class LocationAdapter extends RecyclerView.Adapter<LocationAdapter.NoteHo
         });
     }
 
+    // nombre de location dans la liste
     @Override
     public int getItemCount() {
         if (locationsList != null)
             return locationsList.size();
         else return 0;
-
     }
 
+    // set location
     public void setLocations(List<Location> locations) {
-        // todo : instancier la liste
         locationsList = locations;
-        // todo : notifier l'adapteur
         notifyDataSetChanged();
-
     }
 
 
-    // todo : classe interne NoteHolder
     // référence les éléments de la vue
     public class NoteHolder extends RecyclerView.ViewHolder {
         public ImageView img;

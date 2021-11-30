@@ -35,13 +35,13 @@ public class HomeFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
 
-        // todo : instanciation correcte du binding
+        // instanciation  du binding
         binding = FragmentHomeBinding.inflate(getLayoutInflater());
 
-        // todo : instanciation correcte du ViewModel
+        // instanciation  du ViewModel
         homeViewModel = new ViewModelProvider(requireActivity()).get(HomeViewModel.class);
 
-
+        // recuperation de toutes les locations pour les mettres dans les live data
         ListLocation = homeViewModel.getAllLocation();
 
         View view = binding.getRoot();
@@ -52,17 +52,12 @@ public class HomeFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // todo : déclaration et instanciation du RecyclerView
+        // déclaration et instanciation du RecyclerView
         binding.rvLocation.setLayoutManager(new LinearLayoutManager(getContext()));
-//        binding.rvLocation.setHasFixedSize(true);
 
-        // todo : configuration
-        // todo : adapteur et passage de l'adapteur au RecyclerView
+        // instanciation de l'adapteur et passage de l'adapteur au RecyclerView
         locationAdapter = new LocationAdapter();
         binding.rvLocation.setAdapter(locationAdapter);
-
-        // todo : régler le comportement de l'observe sur la liste de points retourné par le view model
-        // --> méthode onChanged de l'Observer : passer la liste à l'adapteur
 
         ListLocation = homeViewModel.getAllLocation();
         ListLocation.observe(getActivity(),new Observer<List<Location>>() {

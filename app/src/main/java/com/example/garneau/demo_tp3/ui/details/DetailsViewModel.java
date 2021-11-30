@@ -13,11 +13,11 @@ import java.util.List;
 public class DetailsViewModel extends AndroidViewModel {
 
     private LocationRoomDatabase mDb;
-    // todo : déclaration correcte du point retourné
+    // déclaration  du point retourné
     private LiveData<Location> location;
 
 
-    // todo : constructeur
+    // DetailsViewModel constructeur
     public DetailsViewModel(Application application) {
         super(application);
         mDb = LocationRoomDatabase.getDatabase(application);
@@ -26,7 +26,7 @@ public class DetailsViewModel extends AndroidViewModel {
     }
 
 
-    // todo : 1 méthode pour retourner le point à id défini
+    // méthode pour retourner le point avec id en parametre
     public LiveData<Location> getLocation (int id) {
         return mDb.LocationDao().getLocation(id);
     }

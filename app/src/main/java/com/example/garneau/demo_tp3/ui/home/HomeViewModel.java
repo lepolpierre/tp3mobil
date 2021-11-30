@@ -13,19 +13,19 @@ import java.util.List;
 
 public class HomeViewModel extends AndroidViewModel {
 
-    // todo : déclaration correcte de la liste de points retournée
+    // déclaration  de la liste de points retournée
     private LiveData<List<Location>> allLocation;
 
     private LocationRoomDatabase mDb;
 
-    // todo : constructeur
+    // homeViewModel constructeur
     public HomeViewModel(Application application) {
         super(application);
         mDb = LocationRoomDatabase.getDatabase(application);
         allLocation = mDb.LocationDao().getAllLocations();
     }
 
-    // todo : 1 méthode pour retourner la liste de tous les points
+    //  méthode pour retourner la liste de tous les points
     // accédé par le fragment
     public LiveData<List<Location>> getAllLocation () {return allLocation;}
 }

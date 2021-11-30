@@ -41,33 +41,31 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // todo : bonne instanciation du binding
+        // instanciation du binding
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
 
-        // todo : ActionBar --> toolBar
+        // binding toolbar
         setSupportActionBar(binding.toolbar.tbar);
-
-        // todo : instanciation des éléments du layout
 
 
         DrawerLayout drawer = binding.drawerLayout;
         NavigationView navigationView = binding.navView;
 
 
-        // todo : bonne instanciation du AppBarConfiguration.
+        // instanciation app bar configuration
         mAppBarConfiguration = new AppBarConfiguration.Builder(
                 R.id.nav_home, R.id.nav_map)
                 .setOpenableLayout(drawer)
                 .build();
 
-        // todo : bonne déclaration et instanciation du NavController
+        // declaration et instanciation du nav controller
         navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
 
+        //  passage du navController à l'appBaret a  la View parente
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
-        // todo : passage du navController à l'appBar, puis à la View parente
 
     }
 
@@ -79,8 +77,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onSupportNavigateUp() {
-        // todo : déclaration et instanciation du NavController
-
+        // déclaration et instanciation du NavController
         return NavigationUI.navigateUp(navController, mAppBarConfiguration)
                 || super.onSupportNavigateUp();
     }

@@ -25,6 +25,7 @@ import android.location.Location;
 import android.net.wifi.aware.WifiAwareManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.provider.Telephony;
 import android.renderscript.Sampler;
 import android.util.Log;
 import android.view.Gravity;
@@ -62,6 +63,7 @@ import com.example.garneau.demo_tp3.R;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.snackbar.Snackbar;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
@@ -76,10 +78,13 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     private FusedLocationProviderClient fusedLocationClient;
     private Location locationUser;
     private TextView id_distance;
-    private Boolean modeAjoutPoint;
+    private Boolean modeAjoutPoint = false;
     private MarkerLayoutBinding bindingMarker;
     private FragmentMapsBinding binding;
     private FragmentManager manager;
+
+    Geocoder geocoder;
+    List<Address> addresse;
 
     private com.example.garneau.demo_tp3.model.Location markerInfo;
 
@@ -93,20 +98,21 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        // todo : instanciation correcte du binding
+
+        //instanciation du binding
         binding = FragmentMapsBinding.inflate(getLayoutInflater());
 
-        // todo : instanciation correcte du ViewModel
+        // instanciation du view model
         mapsViewModel = new ViewModelProvider(requireActivity()).get(MapsViewModel.class);
 
-        modeAjoutPoint = false;
+        // instanciation de geocoder pour les adresses
+        geocoder = new Geocoder(getContext(), Locale.getDefault());
 
+        // instanciation du childFragmentManager
         manager = getChildFragmentManager();
-        // association du gestionnaire des actions sur la stack
-        //manager.addOnBackStackChangedListener(this);
 
+        // binding et renvoie de la vue
         View view = binding.getRoot();
-
 
         return view;
 
@@ -116,46 +122,41 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        // todo : get mapFragment
 
+        // recuperation du fragment map
         SupportMapFragment mapFragment = (SupportMapFragment)
                 getChildFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
         Activity activity = getActivity();
 
-        // todo : lancer la demande de permission pour géolocalisation
-
+        //demande de permition au lancement de l'application pour utiliser la localisation de l'appareil
         if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION)
         != PackageManager.PERMISSION_GRANTED){
-            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION},LOCATION_PERMISSION_CODE
-                    );
-
+            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION},LOCATION_PERMISSION_CODE);
         }
 
 
-        // todo : clic sur fab
-        // 1. activer la finction d'ajout de points
-        // 2. régler la couleur du fab
-
+        // gestion du fab pour le mod ajout
         binding.fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+
+                // au click du fab il change d'etat entre mode ajout et mode "normal"
                 modeAjoutPoint = !modeAjoutPoint;
+
+                // si il est en mode ajout il sera vert pour indiquer que l'utilisateur
+                // peut desormer ajout un point en cliquant sur la map
                 if (modeAjoutPoint == true){
                     binding.fab.setBackgroundTintList(ColorStateList.valueOf(Color
                             .parseColor("#45F41E")));
                 }else{
+                    // si il n'est pas en mode ajout il sera rouge
                     binding.fab.setBackgroundTintList(ColorStateList.valueOf(Color
                             .parseColor("#EA0202")));
                 }
-
-
             }
         });
-
-
-
     }
 
         /**
@@ -169,29 +170,24 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
          */
         @Override
         public void onMapReady(GoogleMap googleMap) {
+            // recupperation de la carte Google map
             mMap = googleMap;
 
-            // todo : Vérification des permissions et positionnement si permission OK
-            // normalement, ici, la demande de permission a déjà été traitée (onViewCreated)
+            // Placement de la carte sur l'utilisateur une fois que la carte est prete
+            getLastLocation();
 
 
-            // todo : régler le comportement de l'observe sur la liste de points retourné par le view model
-            // --> méthode onChanged de l'Observer : afficher les marqueurs sur la carte depuis la liste de tous les points
-            // !!! Penser à passer le point courant au marqueur (setTag(Object)) à chaque ajout
-            //     Ainsi le point est inclus dans le marqueur et accessible au getInfoContents(Marker)
-
-
+            // Recuperation de tout les marqueur pour les afficher sur la carte
             mapsViewModel.getAllLocation().observe(getViewLifecycleOwner(),
                     new Observer<List<com.example.garneau.demo_tp3.model.Location>>() {
                         @Override
                         public void onChanged(List<com.example.garneau.demo_tp3.model.Location> locations) {
-
+                            // pour toutes les locations enregistrer on recupere les coordonnees et cree un marker a ces
+                            // coordonnees avec la location enregistrer en tag
                             for (com.example.garneau.demo_tp3.model.Location location:locations) {
                                 LatLng pointCoordonees = new LatLng(location.getLatitude(), location.getLongitude());
 
                                 mMap.addMarker(new MarkerOptions().position(pointCoordonees).title(location.getNom())).setTag(location);
-                                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(pointCoordonees, 11));
-
                             }
 
                         }
@@ -200,15 +196,20 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
 
 
-            // todo : clic sur carte
-            // 2 cas : Mode Ajout de Point et Mode normal
+            // Gestion de l'ajout d'un point au click sur la map
             mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener()
             {
                 @Override
                 public void onMapClick(LatLng arg0)
                 {
+                    // si l'utilisateur est passer en mode ajout (fab en vert)
+                    // le click sur la carte declanchera l'ajout d'un market et l'enregiistrement de la location
                     if (modeAjoutPoint)
                     {
+                        // creation d'une location vide pour l'envoyer a la methode actionCliclCarte
+                        // qui s'occupera d'afficher un dialog qui demandera a l'utilisateur les information
+                        // concernant la location et s'occupera de "remplir" la location vide qui aura
+                        // ete passer en parametre
                         com.example.garneau.demo_tp3.model.Location location =
                                 new com.example.garneau.demo_tp3.model.Location("","","", arg0.latitude, arg0.longitude);
                         actionClicCarte(location);
@@ -217,7 +218,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
             });
 
 
-            // todo : placer la barre de zoom
+            // Activation du controlle du zoom sur la map
             mMap.getUiSettings().setZoomControlsEnabled(true);
 
 
@@ -228,37 +229,44 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
                     return null;
                 }
 
+
+                // affichage des donnees au click sur un marker existant
                 @Override
                 public View getInfoContents(Marker marker) {
-                    // todo : clic sur marqueur
-                    // 1. affichage de distance sur le fragment
-                    // 2. Déployer le layout de la vue Marker et passer les valeurs du point cliqué afin d'affichage
 
+                    List<Address> uneAddresse = null;
 
                     bindingMarker = MarkerLayoutBinding.inflate(getLayoutInflater());
-//                    bindingMarker = MarkerLayoutBinding.inflate(LayoutInflater.from(MainActivity.this));
 //
                     TextView tvNom = bindingMarker.tvNomMap;
                     TextView tvAdress = bindingMarker.tvAdrMap;
                     TextView tvCat = bindingMarker.tvCatMap;
                     ImageView ivPhotoMap = bindingMarker.ivPhotoMap;
-//                    TextView tvNom = bindingMarker.tvNomMap;
-//                    ImageView ivPhoto = bindingMarker.ivPhotoMap;
+
+                    // recuperation de la location associer au marker
                     markerInfo= (com.example.garneau.demo_tp3.model.Location) marker.getTag();
 
-                    if (markerInfo != null){
-                        tvAdress.setText("boop");
+                    // si la location associer au marker existe
+                    if (markerInfo != null) {
+
+                        // association des information de la location aux layout
+
+                        tvCat.setText(markerInfo.getAdresse());
                         tvCat.setText(markerInfo.getCategorie());
                         tvNom.setText(markerInfo.getNom());
-                        ivPhotoMap.setImageResource(R.drawable.pleinair);
+
+                        // associe une image en fonction de la categorie de la location
+                        if (markerInfo.getCategorie().equals("parc")) {
+                            ivPhotoMap.setImageResource(R.drawable.parc);
+                        } else if (markerInfo.getCategorie().equals("maison")) {
+                            ivPhotoMap.setImageResource(R.drawable.maison);
+                        } else {
+                            ivPhotoMap.setImageResource(R.drawable.foret);
+                        }
                     }
-//
-//                    // Récupération de l'objet attaché au Marker
-//                    Cegep markerInfo = (Cegep) marker.getTag();
-//                    if (markerInfo != null) {
-//                        tvNom.setText(markerInfo.getNom());
-//                        ivPhoto.setImageResource(R.drawable.garneau);
-//                    }
+
+                        // affiche la distance entre la ou se trouve l'utilisateur et le marker selectionner
+                        showDistance(marker);
                         return bindingMarker.getRoot();
                 }
 
@@ -281,7 +289,8 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
             fusedLocationClient.getLastLocation().addOnSuccessListener(requireActivity(), new OnSuccessListener<Location>() {
                 @Override
                 public void onSuccess(Location location) {
-
+                    // Si la localisation existe cree uun marker a sont emplacement et positionne
+                    // la camera en zoomant a cette endroit
                     if (location != null) {
                         locationUser = location;
                         userLoc = new LatLng(location.getLatitude(), location.getLongitude());
@@ -292,14 +301,14 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
             });
         }
 
-    // todo : si permission Ok
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
         if (requestCode == LOCATION_PERMISSION_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // todo : positionnement si permission OK
+
+                getLastLocation();
             } else if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_DENIED) {
                 Log.d("TAG", "onRequestPermissionsResult: ");
                 if (ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(),
@@ -336,14 +345,19 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
         // obtention de la valeur de distance
         float distance = markerLoc.distanceTo(locationUser);
-        // todo : affichage de la valeur de distance en kms
+
+
+        // affiche la distance en km entre l'utilisateur et le marker
+        Toast.makeText(getContext(), "distance jusqu'a la location "+String.format("%.2f", distance/1000)+" km",
+                Toast.LENGTH_SHORT).show();
+
+
     }
 
-    // todo : méthode privée de recherche d'adresse
-    private void rechercheAdresse(){
-
-
-            //return null;
+    // cherche l'adress aux coordonnees de la localisation en passant par l'api geocoder
+    private List<Address> rechercheAdresse(double latitude, double longitude) throws IOException {
+        addresse = geocoder.getFromLocation(latitude, longitude,1);
+        return addresse;
     }
 
 
@@ -364,9 +378,10 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         layout.addView(txtSetTv1);
 
         ArrayList<String> spinnerArray = new ArrayList<String>();
-        // todo : passage au spinner des valeurs de catégorie possibles
+
+        // ajout des differentes categories dans le spinner
         spinnerArray.add("parc");
-        spinnerArray.add("rue");
+        spinnerArray.add("foret");
         spinnerArray.add("maison");
 
         Spinner spinner = new Spinner(getActivity());
@@ -413,12 +428,24 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
         @Override
         public void onClick(DialogInterface p_dialog, int p_which) {
-            // todo : ajout dans la BD du nouveau point
-            // construction du point
+            // ajout du nouveau point dans la bd
+            List<Address> uneAddresse = null;
             location.setNom(setTv1.getText().toString());
-            location.setCategorie(spinner.toString());
-            new InsertLocationDbAsync(mapsViewModel, location).execute();
+            location.setCategorie(spinner.getSelectedItem().toString());
 
+            // si la localisation existe recupere l'adresse
+            if (location != null) {
+                try {
+                     uneAddresse = rechercheAdresse(location.getLatitude(), location.getLongitude());
+                    location.setAdresse(uneAddresse.get(0).getAddressLine(0).toString());
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            // ajout a la base de donnees de facons asynchrone
+            new InsertLocationDbAsync(mapsViewModel, location).execute();
 
         }
     }
@@ -437,7 +464,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
         @Override
         protected Void doInBackground(Void... voids) {
-            // todo : insertion d'un point dans la BD
+            // ajout de la location a la base de donnee en passant par le view model
             mapsViewModel.insert(location);
             return null;
         }

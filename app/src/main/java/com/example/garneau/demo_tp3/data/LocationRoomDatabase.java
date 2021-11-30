@@ -56,8 +56,8 @@ public abstract class LocationRoomDatabase extends RoomDatabase {
         @Override
         protected Void doInBackground(Void... voids) {
             locationDao.insert(new Location("what","else", "schmut", 46.793028, -71.2646));
-            locationDao.insert(new Location("whot","else", "schmit", 46.79, -71.264));
-            locationDao.insert(new Location("garneau","ecole", " adress garneau", 46.792028, -71.264176));
+            locationDao.insert(new Location("whot","else", "schmit", 46.8, -71.274));
+            locationDao.insert(new Location("garneau","ecole", " adresse garneau", 46.792028, -71.264176));
 
             return null;
         }

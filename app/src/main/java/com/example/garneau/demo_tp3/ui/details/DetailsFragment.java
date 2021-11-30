@@ -60,18 +60,11 @@ public class DetailsFragment extends Fragment implements OnMapReadyCallback {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
 
-        // todo : instanciation correcte du binding
+        // instanciation  du binding
         binding = DetailsFragmentBinding.inflate(getLayoutInflater());
-        // todo : instanciation correcte du ViewModel
+
+        //instanciation  du ViewModel
         detailsViewModel = new ViewModelProvider(requireActivity()).get(DetailsViewModel.class);
-//
-//        FragmentManager manager = getFragmentManager();
-//        FragmentTransaction transaction = manager.beginTransaction();
-//        SupportMapFragment fragment = new SupportMapFragment();
-//        transaction.add(R.id.map, fragment);
-//        transaction.commit();
-//
-//        fragment.getMapAsync(this);
 
         View view = binding.getRoot();
         return view;
@@ -82,18 +75,11 @@ public class DetailsFragment extends Fragment implements OnMapReadyCallback {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // todo : titre de fragment dans l'ActionBar
-
-
-        // todo : instanciation correcte de l'id d'élément détaillé
         id = DetailsFragmentArgs.fromBundle(getArguments()).getIdLocation();
         assert getArguments() != null;
         Toast.makeText(getContext(), String.valueOf(id), Toast.LENGTH_LONG).show();
         location = detailsViewModel.getLocation(id);
 
-
-        // todo : régler le comportement de l'observe sur le point retourné par le view model
-        // --> méthode onChanged de l'Observer : passer les valeurs du point courant à la View
         detailsViewModel.getLocation(id).observe(getViewLifecycleOwner(),
                 new Observer<Location>() {
                     @Override
@@ -101,14 +87,22 @@ public class DetailsFragment extends Fragment implements OnMapReadyCallback {
                         binding.tvNomDetails.setText(location.getNom());
                         binding.tvAdresseDetails.setText(location.getAdresse());
                         binding.tvCategorieDetails.setText(location.getCategorie());
+                        if (location.getCategorie().equals("parc")) {
+                            binding.ivLocationBottom.setImageResource(R.drawable.parc);
+                        } else if (location.getCategorie().equals("maison")) {
+                            binding.ivLocationBottom.setImageResource(R.drawable.maison);
+                        } else {
+                            binding.ivLocationBottom.setImageResource(R.drawable.foret);
+                        }
                     }
                 });
 
+        // recuperation du fragement map
         SupportMapFragment mapFragment = (SupportMapFragment)
                 getChildFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
     }
-        // todo : get mapFragment
+
 
 
 
@@ -116,10 +110,8 @@ public class DetailsFragment extends Fragment implements OnMapReadyCallback {
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
-        // todo : régler le comportement de l'observe sur élément Location retourné par le view model
-        // --> méthode onChanged de l'Observer : affichage correct du marqueur pour ce point
+        // recuperatiion de la map
         mMap = googleMap;
-
 
         detailsViewModel.getLocation(id).observe(getViewLifecycleOwner(),
                 new Observer<Location>() {

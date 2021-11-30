@@ -14,24 +14,23 @@ import java.util.List;
 
 public class MapsViewModel extends AndroidViewModel {
 
-    // todo : déclaration correcte de la liste de points retournée
+    // declaration de la liste de point retourner
     private LiveData<List<Location>> allLocation;
 
     private LocationRoomDatabase mDb;
 
-    // todo : constructeur
+    // constructeur du view model
     public MapsViewModel(Application application) {
         super(application);
-        // todo : obtenir la liste de tous les points
+        // obtention de tout les points comptenue dans la bd en passant par le dao
         mDb = LocationRoomDatabase.getDatabase(application);
         allLocation = mDb.LocationDao().getAllLocations();
     }
 
-
-    // todo : méthode pour obtenir depuis la BD la liste de tous les points
+    // methoode pouor recuperer toutes les location
     public LiveData<List<Location>> getAllLocation () {return allLocation;}
 
-    // todo : méthode pour insérer un point dans la BD
+    // methode pour inserer une location dans la base de donnee
     public void insert (Location location) {mDb.LocationDao().insert(location);}
 
 
